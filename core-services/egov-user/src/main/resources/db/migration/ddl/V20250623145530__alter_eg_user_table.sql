@@ -1,0 +1,1 @@
+ALTER TABLE public.eg_user ADD column samagraId varchar(128) NULL;

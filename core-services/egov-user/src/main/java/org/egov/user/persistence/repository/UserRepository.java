@@ -519,7 +519,9 @@ public class UserRepository {
 
         userInputs.put("pan", entityUser.getPan());
         userInputs.put("aadhaarnumber", entityUser.getAadhaarNumber());
-
+        //**** Added samagraid 
+        userInputs.put("samagraid", entityUser.getSamagraId());
+        //***
         List<Enum> userTypeEnumValues = Arrays.asList(UserType.values());
         if (entityUser.getType() != null) {
             if (userTypeEnumValues.contains(entityUser.getType()))

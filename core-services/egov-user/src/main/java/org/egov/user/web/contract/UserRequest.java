@@ -140,7 +140,12 @@ public class UserRequest {
     @SafeHtml
     @Size(max = 36)
     private String uuid;
-
+    
+    //**** added samagraId
+    @SafeHtml
+    @Size(max = 30)
+    private String samagraId;
+    // ******
 
     @JsonFormat(pattern = "dd-MM-yyyy HH:mm:ss")
     private Date createdDate;
@@ -184,6 +189,9 @@ public class UserRequest {
         this.relationship = user.getGuardianRelation();
         this.uuid = user.getUuid();
         this.alternatemobilenumber=user.getAlternateMobileNumber();
+        //**** added samagraId
+        this.samagraId=user.getSamagraId();
+        //****
         mapPermanentAddress(user);
         mapCorrespondenceAddress(user);
     }
@@ -229,6 +237,9 @@ public class UserRequest {
                 .altContactNumber(this.altContactNumber)
                 .pan(this.pan)
                 .aadhaarNumber(this.aadhaarNumber)
+                //**** added samagraId
+                .samagraId(this.samagraId)
+                //***
                 .active(isActive(isCreate))
                 .dob(this.dob)
                 .passwordExpiryDate(this.pwdExpiryDate)
