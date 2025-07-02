@@ -145,6 +145,14 @@ public class UserRequest {
     @SafeHtml
     @Size(max = 30)
     private String samagraId;
+    
+    @SafeHtml
+    @Size(max = 120)
+    private String hindiName;
+    
+    @SafeHtml
+    @Size(max = 120)
+    private String salutationHindi;
     // ******
 
     @JsonFormat(pattern = "dd-MM-yyyy HH:mm:ss")
@@ -189,8 +197,10 @@ public class UserRequest {
         this.relationship = user.getGuardianRelation();
         this.uuid = user.getUuid();
         this.alternatemobilenumber=user.getAlternateMobileNumber();
-        //**** added samagraId
+        //**** added samagraId salutationHindi hindiName
         this.samagraId=user.getSamagraId();
+        this.salutationHindi=user.getSalutationHindi();
+        this.hindiName=user.getHindiName();
         //****
         mapPermanentAddress(user);
         mapCorrespondenceAddress(user);
@@ -237,8 +247,10 @@ public class UserRequest {
                 .altContactNumber(this.altContactNumber)
                 .pan(this.pan)
                 .aadhaarNumber(this.aadhaarNumber)
-                //**** added samagraId
+                //**** added samagraId hindiName salutationHindi
                 .samagraId(this.samagraId)
+                .hindiName(this.hindiName)
+                .salutationHindi(this.salutationHindi)
                 //***
                 .active(isActive(isCreate))
                 .dob(this.dob)
