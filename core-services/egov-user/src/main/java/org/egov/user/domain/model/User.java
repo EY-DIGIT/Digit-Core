@@ -87,6 +87,10 @@ public class User {
     private boolean otpValidationMandatory;
     private boolean mobileValidationMandatory = true;
     private String alternateMobileNumber;
+    private String samagraId;
+    private String hindiName;
+    private String salutationHindi;
+    
 
     public User addAddressItem(Address addressItem) {
         if (this.addresses == null) {

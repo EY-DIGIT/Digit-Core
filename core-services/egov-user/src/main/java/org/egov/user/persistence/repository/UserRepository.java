@@ -519,7 +519,12 @@ public class UserRepository {
 
         userInputs.put("pan", entityUser.getPan());
         userInputs.put("aadhaarnumber", entityUser.getAadhaarNumber());
-
+        //**** Added samagraid  hindiName salutationHindi
+        userInputs.put("samagraid", entityUser.getSamagraId());
+        userInputs.put("hindiName", entityUser.getHindiName());
+        userInputs.put("salutationHindi", entityUser.getSalutationHindi());
+        
+        //***
         List<Enum> userTypeEnumValues = Arrays.asList(UserType.values());
         if (entityUser.getType() != null) {
             if (userTypeEnumValues.contains(entityUser.getType()))
