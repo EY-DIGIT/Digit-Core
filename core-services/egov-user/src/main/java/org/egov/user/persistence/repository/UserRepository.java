@@ -521,8 +521,8 @@ public class UserRepository {
         userInputs.put("aadhaarnumber", entityUser.getAadhaarNumber());
         //**** Added samagraid  hindiName salutationHindi
         userInputs.put("samagraid", entityUser.getSamagraId());
-        userInputs.put("hindiName", entityUser.getHindiName());
-        userInputs.put("salutationHindi", entityUser.getSalutationHindi());
+        userInputs.put("hindiname", entityUser.getHindiName());
+        userInputs.put("salutationhindi", entityUser.getSalutationHindi());
         
         //***
         List<Enum> userTypeEnumValues = Arrays.asList(UserType.values());
