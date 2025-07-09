@@ -33,6 +33,9 @@ public class UserSearchCriteria {
     private String tenantId;
     private List<String> roleCodes;
     private String alternatemobilenumber;
+    private String samagraId;
+    private String hindiName;
+    private String salutaionHindi;
 
     public void validate(boolean isInterServiceCall) {
         if (validateIfEmptySearch(isInterServiceCall) || validateIfTenantIdExists(isInterServiceCall)) {
