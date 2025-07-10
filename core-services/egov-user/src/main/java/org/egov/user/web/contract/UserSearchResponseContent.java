@@ -38,6 +38,11 @@ public class UserSearchResponseContent {
     private String correspondenceCity;
     private String correspondencePinCode;
     private String alternatemobilenumber;
+    //***********Added SamagraId , hindiName and salutationHinid
+    private String samagraId;
+    private String hindiName;
+    private String salutationHindi;
+    //***********
 
     @JsonIgnore
     private Set<Address> addresses;
@@ -102,6 +107,11 @@ public class UserSearchResponseContent {
         this.uuid = user.getUuid();
         this.addresses = user.getAddresses();
         this.alternatemobilenumber=user.getAlternateMobileNumber();
+        //***********Added SamagraId , hindiName and salutationHinid
+        this.samagraId=user.getSamagraId();
+        this.hindiName=user.getHindiName();
+        this.salutationHindi=user.getSalutationHindi();
+        //***********************
         mapPermanentAddress(user);
         mapCorrespondenceAddress(user);
     }
