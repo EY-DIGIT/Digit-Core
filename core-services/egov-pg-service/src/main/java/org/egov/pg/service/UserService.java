@@ -39,8 +39,8 @@ public class UserService {
 
         User user = userList.get(0);
         if (isNull(user) || isNull(user.getUuid()) || isEmpty(user.getName()) || isNull(user.getUserName()) ||
-                isNull(user.getTenantId()) || isNull(user.getMobileNumber()))
-            throw new CustomException("INVALID_USER_DETAILS", "User UUID, Name, Username, Mobile Number and Tenant Id are " +
+                isNull(user.getTenantId()) || isNull(user.getMobileNumber()) || isNull(user.getEmailId()))
+            throw new CustomException("INVALID_USER_DETAILS", "User UUID, Name, Username, Mobile Number, Email Id and Tenant Id are " +
                     "mandatory");
 
         return user;
