@@ -144,10 +144,10 @@ public class EasebuzzGateway implements Gateway {
 				    .build();
 			HttpResponse<String> response = null;
 			try {
-				log.info("Sending request to "+MERCHANT_URL_DEBIT);
-				log.info("Query : "+request);
+				log.info("Sending request to "+MERCHANT_URL_STATUS);
+				log.info("Query : "+body);
 				response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
-				log.info("Received response "+MERCHANT_URL_DEBIT);
+				log.info("Received response "+MERCHANT_URL_STATUS);
 			} catch (IOException | InterruptedException e) {
 				log.error("Error occurred while sending request to Easebuzz: {}", e.getMessage(), e);
 			}
