@@ -16,11 +16,13 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -63,7 +65,6 @@ public class EasebuzzGateway implements Gateway {
            
             // Optional: Generate hash using merchant_key + txnid + amount + productinfo + firstname + email + salt
             // Note: Actual implementation would use secure hash method (e.g., SHA512) as per Easebuzz documentation
- 
             String hashString = MERCHANT_KEY + "|" + transaction.getTxnId() + "|" + Utils.formatAmtAsRupee(transaction.getTxnAmount())
                     + "|"+transaction.getProductInfo()+"|" + transaction.getUser().getName() + "|" + transaction.getUser().getEmailId() + "|||||||||||" + SALT;
             //System.out.println(hashString);
@@ -127,44 +128,90 @@ public class EasebuzzGateway implements Gateway {
     @Override
     public Transaction fetchStatus(Transaction currentStatus, Map<String, String> params) {
         try {
-            MultiValueMap<String, String> statusRequest = new LinkedMultiValueMap<>();
-            statusRequest.add("txnid", currentStatus.getTxnId());
-            statusRequest.add("key", MERCHANT_KEY);
- 
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
- 
-            HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(statusRequest, headers);
- 
-            ResponseEntity<EasebuzzResponse> response = restTemplate.postForEntity(
-                    MERCHANT_URL_STATUS, request, EasebuzzResponse.class);
- 
-            return transformRawResponse(response.getBody(), currentStatus);
+                 
+			String hashString = MERCHANT_KEY + "|" + currentStatus.getTxnId() + "|" + SALT;
+			// System.out.println(hashString);
+			String hash = Utils.generateSha512Hash(hashString);
+			String body = "key=" + URLEncoder.encode(MERCHANT_KEY, "UTF-8")
+            + "&txnid=" + URLEncoder.encode(currentStatus.getTxnId(), "UTF-8")
+            + "&hash=" + URLEncoder.encode(hash, "UTF-8");
+
+			HttpRequest request = HttpRequest.newBuilder()
+				    .uri(URI.create(MERCHANT_URL_STATUS))
+				    .header("Content-Type", "application/x-www-form-urlencoded")
+				    .header("Accept", "application/json")
+				    .method("POST", HttpRequest.BodyPublishers.ofString(body))
+				    .build();
+			HttpResponse<String> response = null;
+			try {
+				log.info("Sending request to "+MERCHANT_URL_DEBIT);
+				log.info("Query : "+request);
+				response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
+				log.info("Received response "+MERCHANT_URL_DEBIT);
+			} catch (IOException | InterruptedException e) {
+				log.error("Error occurred while sending request to Easebuzz: {}", e.getMessage(), e);
+			}
+			if(response != null)
+				return transformRawResponse(response.body(), currentStatus);
+			else {
+				log.error("Unable to fetch response from Easebuzz");
+				throw new CustomException("STATUS_FETCH_FAILED", "Failed to fetch transection status from Easebuzz");
+			}
+				
         } catch (Exception e) {
             log.error("Unable to fetch status from Easebuzz", e);
             throw new CustomException("STATUS_FETCH_FAILED", "Failed to fetch payment status from Easebuzz");
         }
     }
  
-    private Transaction transformRawResponse(EasebuzzResponse resp, Transaction currentStatus) {
-        Transaction.TxnStatusEnum status = Transaction.TxnStatusEnum.PENDING;
- 
-        if ("success".equalsIgnoreCase(resp.getStatus()))
-            status = Transaction.TxnStatusEnum.SUCCESS;
-        else if ("failure".equalsIgnoreCase(resp.getStatus()))
-            status = Transaction.TxnStatusEnum.FAILURE;
- 
-        return Transaction.builder()
-                .txnId(currentStatus.getTxnId())
-                .txnAmount(Utils.formatAmtAsRupee(resp.getAmount()))
-                .txnStatus(status)
-                .gatewayTxnId(resp.getEasepayid())
-                .gatewayPaymentMode(resp.getMode())
-                .gatewayStatusCode(resp.getStatus())
-                .gatewayStatusMsg(resp.getError())
-                .responseJson(resp)
-                .build();
-    }
+    private Transaction transformRawResponse(String body, Transaction currentStatus) {
+    	
+    	ObjectMapper mapper = new ObjectMapper();
+    	EasebuzzResponse easebuzzResponse = null;
+		try {
+			easebuzzResponse = mapper.readValue(body, EasebuzzResponse.class);
+		} catch (JsonProcessingException e) {
+			log.error("Error while parsing Easebuzz API response: {}", body, e);
+		}
+    	
+    	 Transaction.TxnStatusEnum status = Transaction.TxnStatusEnum.PENDING;
+    	 EasebuzzTransaction transaction = null;
+    	 try {
+    		    if (easebuzzResponse == null) {
+    		        throw new IllegalStateException("Easebuzz response is null.");
+    		    }
+
+    		    if (!easebuzzResponse.isStatus()) {
+    		        throw new IllegalStateException("Easebuzz response indicates failure. Status=false.");
+    		    }
+
+    		    if (easebuzzResponse.getMsg() == null || easebuzzResponse.getMsg().isEmpty()) {
+    		        throw new IllegalStateException("Easebuzz response 'msg' field is null or empty.");
+    		    }
+
+    		    transaction = easebuzzResponse.getMsg().get(0);
+    		} catch (Exception e) {
+    		   log.error("Error while extracting transaction from Easebuzz response: " + e.getMessage());
+    		}
+    	 
+         if (easebuzzResponse.isStatus() && easebuzzResponse != null)
+             status = Transaction.TxnStatusEnum.SUCCESS;
+         else 
+             status = Transaction.TxnStatusEnum.FAILURE;
+  
+         return Transaction.builder()
+                 .txnId(currentStatus.getTxnId())
+                 .txnAmount(Utils.formatAmtAsRupee(transaction.getAmount()))
+                 .txnStatus(status)
+                 .gatewayTxnId(transaction.getEasepayid())
+                 .gatewayPaymentMode(transaction.getCardType())
+                 .gatewayStatusCode(transaction.getStatus())
+                 .gatewayStatusMsg(transaction.getError())
+                 .responseJson(transaction)
+                 .build();
+
+	}
+
  
     @Override
     public boolean isActive() {

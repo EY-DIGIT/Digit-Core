@@ -1,5 +1,7 @@
 package org.egov.pg.service.gateways.easebuzz;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
  
@@ -7,27 +9,18 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class EasebuzzResponse {
- 
+
     @JsonProperty("status")
-    private String status;
- 
-    @JsonProperty("txnid")
-    private String txnid;
- 
-    @JsonProperty("easepayid")
-    private String easepayid;
- 
-    @JsonProperty("amount")
-    private String amount;
- 
-    @JsonProperty("mode")
-    private String mode;
- 
-    @JsonProperty("error")
-    private String error;
- 
-    @JsonProperty("field1")
-    private String field1;
- 
-    // Add more fields as needed from actual API response
+    private boolean status;
+
+    @JsonProperty("msg")
+    private List<EasebuzzTransaction> msg;
+
+    public boolean isStatus() {
+        return status;
+    }
+
+    public List<EasebuzzTransaction> getMsg() {
+        return msg;
+    }
 }
