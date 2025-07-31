@@ -11,6 +11,7 @@ public class PgConstants {
     public static final String NOTIFICATION_LOCALE = "en_IN";
     public static final String PG_NOTIFICATION = "PG_NOTIFICATION";
     public static final String PG_MODULE = "egov-pg";
+    public static final String PG_TXN_IN_LABEL_EASEBUZZ_DATA = "amp;eg_pg_txnid";
 
     private PgConstants() {
     }

@@ -42,7 +42,12 @@ public class EasebuzzGateway implements Gateway {
     private final String MERCHANT_URL_STATUS;
     private final String MERCHANT_URL_PAY;
     private final boolean ACTIVE;
- 
+    private final String REDIRECT_URL;
+    private final String ORIGINAL_RETURN_URL_KEY;
+    
+    private final String SUCCESS_URL_KEY = "successUrl";
+    private final String FAIL_URL_KEY = "failUrl";
+    
     private final RestTemplate restTemplate;
  
     @Autowired
@@ -55,6 +60,8 @@ public class EasebuzzGateway implements Gateway {
         MERCHANT_URL_DEBIT = environment.getRequiredProperty("easebuzz.url.debit");
         MERCHANT_URL_STATUS = environment.getRequiredProperty("easebuzz.url.status");
         MERCHANT_URL_PAY = environment.getRequiredProperty("easebuzz.test.url.pay");
+        REDIRECT_URL = environment.getRequiredProperty("easebuzz.redirect.url");
+        ORIGINAL_RETURN_URL_KEY = environment.getRequiredProperty("easebuzz.original.return.url.key");
      
     }
  
@@ -69,7 +76,9 @@ public class EasebuzzGateway implements Gateway {
                     + "|"+transaction.getProductInfo()+"|" + transaction.getUser().getName() + "|" + transaction.getUser().getEmailId() + "|||||||||||" + SALT;
             //System.out.println(hashString);
             String hash = Utils.generateSha512Hash(hashString);
- 
+            String returnUrl = transaction.getCallbackUrl();
+            log.info("returnUrl::::"+getReturnUrl(returnUrl, REDIRECT_URL));
+           
             String requestBody = "key="+MERCHANT_KEY
                     + "&txnid="+transaction.getTxnId()
                     + "&amount="+Utils.formatAmtAsRupee(transaction.getTxnAmount())
@@ -77,8 +86,8 @@ public class EasebuzzGateway implements Gateway {
                     + "&firstname="+transaction.getUser().getName()
                     + "&email="+transaction.getUser().getEmailId()
                     + "&phone="+transaction.getUser().getMobileNumber()
-                    + "&surl="+transaction.getCallbackUrl()
-                    + "&furl="+transaction.getCallbackUrl()
+                    + "&surl="+getReturnUrl(returnUrl, REDIRECT_URL)
+                    + "&furl="+getReturnUrl(returnUrl,REDIRECT_URL)
                     + "&hash="+hash;
             
             HttpRequest request = HttpRequest.newBuilder()
@@ -123,6 +132,10 @@ public class EasebuzzGateway implements Gateway {
             log.error("Easebuzz hash generation failed", e);
             throw new CustomException("HASH_GEN_FAILED", "Hash generation failed, gateway redirect URI cannot be generated");
         }
+    }
+    
+    private String getReturnUrl(String callbackUrl, String baseurl) {
+        return UriComponentsBuilder.fromHttpUrl(baseurl).queryParam(ORIGINAL_RETURN_URL_KEY, callbackUrl).build().toUriString();
     }
  
     @Override
