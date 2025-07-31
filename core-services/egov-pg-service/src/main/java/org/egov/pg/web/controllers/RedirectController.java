@@ -94,13 +94,9 @@ public class RedirectController {
             StringBuilder redirectURL = new StringBuilder();
             redirectURL.append(returnURL);
             formData.remove(returnUrlKey);
-            httpHeaders.setLocation(UriComponentsBuilder.fromHttpUrl(redirectURL.toString())
-                    .queryParams(formData).build().encode().toUri());
+            httpHeaders.setLocation(UriComponentsBuilder.fromHttpUrl(redirectURL.toString()).build().encode().toUri());
+            log.info("Redirect Url : "+redirectURL);
         } 
-        else {
-            httpHeaders.setLocation(UriComponentsBuilder.fromHttpUrl(formData.get(returnUrlKey).get(0))
-                    .queryParams(formData).build().encode().toUri());
-        }
 
         return new ResponseEntity<>(httpHeaders, HttpStatus.FOUND);
     }
