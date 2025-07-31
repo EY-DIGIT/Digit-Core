@@ -17,6 +17,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import lombok.extern.slf4j.Slf4j;
@@ -44,7 +45,7 @@ public class RedirectController {
     }
 
     @PostMapping(value = "/transaction/v1/_redirect", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-    public ResponseEntity<Object> method(@RequestBody MultiValueMap<String, String> formData) {
+    public ResponseEntity<Object> method(@RequestParam MultiValueMap<String, String> formData) {
         
         log.info("formData in redirect::::"+formData);
 
@@ -89,7 +90,7 @@ public class RedirectController {
          * https://test.org/pg-service/transaction/v1/_redirect?originalreturnurl=/digit-ui/citizen/payment/success/PT/PG-PT-2022-03-10-006063/pg.citya?eg_pg_txnid=PB_PG_2022_07_12_002082_48
          * Here we are reading originalreturnurl value and then forming redirect URL with domain name.
          */
-        if(gateway != null && gateway.equalsIgnoreCase("PAYGOV")) {
+        if(gateway != null && gateway.equalsIgnoreCase("EASEBUZZ")) {
             StringBuilder redirectURL = new StringBuilder();
             redirectURL.append(returnURL);
             formData.remove(returnUrlKey);
