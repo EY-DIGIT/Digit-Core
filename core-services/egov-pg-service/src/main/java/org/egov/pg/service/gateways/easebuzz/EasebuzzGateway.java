@@ -86,8 +86,10 @@ public class EasebuzzGateway implements Gateway {
                     + "&firstname="+transaction.getUser().getName()
                     + "&email="+transaction.getUser().getEmailId()
                     + "&phone="+transaction.getUser().getMobileNumber()
-                    + "&surl="+getReturnUrl(returnUrl, REDIRECT_URL)
-                    + "&furl="+getReturnUrl(returnUrl,REDIRECT_URL)
+                    //+ "&surl="+getReturnUrl(returnUrl, REDIRECT_URL)
+                    //+ "&furl="+getReturnUrl(returnUrl,REDIRECT_URL)
+                    + "&surl="+returnUrl
+                    + "&furl="+returnUrl
                     + "&hash="+hash;
             
             HttpRequest request = HttpRequest.newBuilder()
