@@ -45,7 +45,7 @@ public class RedirectController {
     }
 
     @PostMapping(value = "/transaction/v1/_redirect", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-    public ResponseEntity<Object> method(@RequestParam MultiValueMap<String, String> formData) {
+    public String method(@RequestParam MultiValueMap<String, String> formData) {
         
         log.info("formData in redirect::::"+formData);
 
@@ -98,8 +98,10 @@ public class RedirectController {
             log.info("Redirect Url : "+redirectURL);
         } 
 
-        return new ResponseEntity<>(httpHeaders, HttpStatus.FOUND);
+        //return new ResponseEntity<>(httpHeaders, HttpStatus.FOUND);
+        return "redirect:"+returnURL;
     }
+    
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Object> handleError(Exception e) {
