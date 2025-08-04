@@ -68,6 +68,18 @@ public class SMSProperties {
 
     @Value("${sms.whitelist.numbers}")
     private List<String> whitelistNumbers;
+    
+    @Value("${sms.provider.entityId}")
+    private String entityId;
+    
+    @Value("${sms.provider.customerId}")
+    private String customerId;
+    
+    @Value("${sms.provider.messageType}")
+    private String messageType;
+    
+    @Value("${sms.provider.dltTemplateId}")
+    private String dltTemplateId;
 
     @Setter(AccessLevel.PROTECTED) private List<Pattern> whitelistPatterns;
     @Setter(AccessLevel.PROTECTED) private List<Pattern> blacklistPatterns;

@@ -35,10 +35,11 @@ public class GenericSMSServiceImpl extends BaseSMSService {
             String url = smsProperties.getUrl();
 
             if (smsProperties.requestType.equals("POST")) {
-                HttpEntity<MultiValueMap<String, String>> request = getRequest(sms);
+               // HttpEntity<MultiValueMap<String, String>> request = getRequest(sms);
+              //  executeAPI(URI.create(url), HttpMethod.POST, request, String.class);
 
-                executeAPI(URI.create(url), HttpMethod.POST, request, String.class);
-
+               sendSmsAPICall(sms);
+               
             } else {
                 final MultiValueMap<String, String> requestBody = getSmsRequestBody(sms);
 

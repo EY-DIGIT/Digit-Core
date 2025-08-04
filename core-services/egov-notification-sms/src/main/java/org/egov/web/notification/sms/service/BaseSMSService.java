@@ -29,6 +29,7 @@ import javax.net.ssl.*;
 import java.io.*;
 import java.lang.reflect.Type;
 import java.net.*;
+import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.util.*;
 
@@ -172,6 +173,45 @@ abstract public class BaseSMSService implements SMSService, SMSBodyBuilder {
 
         return map;
     }
+    
+    
+    private Map<String, Object> getSmsRequestBodyJson(Sms sms){
+    	Map<String, Object> body = new HashMap<>();
+    	body.put("customerId", smsProperties.getCustomerId());
+    	body.put("destinationAddress", Collections.singletonList(sms.getMobileNumber()));
+    	body.put("dltTemplateId", smsProperties.getDltTemplateId());
+    	body.put("entityId", smsProperties.getEntityId());
+    	body.put("message", sms.getMessage());
+    	body.put("messageType", smsProperties.getMessageType());
+    	body.put("sourceAddress", smsProperties.getSenderid());
+    	return body;
+    }
+    
+	protected <T> ResponseEntity<T> sendSmsAPICall(Sms sms) {
+		Map<String, Object> body = getSmsRequestBodyJson(sms);
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+		headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+		headers.set("Authorization", "Basic " + Base64.getEncoder().encodeToString(
+				(smsProperties.getUsername() + ":" + smsProperties.getPassword()).getBytes(StandardCharsets.UTF_8)));
+
+		HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+
+		ResponseEntity<String> response = restTemplate.postForEntity(smsProperties.getUrl(), request, String.class);
+
+		String responseString = response.getBody().toString();
+		log.info("Sms Sent Response : " + response.toString());
+
+		if (smsProperties.getSmsErrorCodes().size() > 0 && isResponseCodeInKnownErrorCodeList(response)) {
+			throw new RuntimeException(SMS_RESPONSE_NOT_SUCCESSFUL);
+		}
+
+		if (smsProperties.getSmsSuccessCodes().size() > 0 && !isResponseCodeInKnownSuccessCodeList(response)) {
+			throw new RuntimeException(SMS_RESPONSE_NOT_SUCCESSFUL);
+		}
+
+		return (ResponseEntity<T>) response;
+	}
 
     protected HttpEntity<MultiValueMap<String, String>> getRequest(Sms sms) {
         final MultiValueMap<String, String> requestBody = getSmsRequestBody(sms);
