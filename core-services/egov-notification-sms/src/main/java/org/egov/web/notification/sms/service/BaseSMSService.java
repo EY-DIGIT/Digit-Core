@@ -174,6 +174,94 @@ abstract public class BaseSMSService implements SMSService, SMSBodyBuilder {
         return map;
     }
     
+    public MultiValueMap<String, String> getSmsRequestBodyNew(Sms sms) {
+        MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
+        for (String key : smsProperties.getConfigMap().keySet()) {
+            String value = smsProperties.getConfigMap().get(key);
+            if (value.startsWith("$")) {
+                switch (value) {
+                    case "$customerId":
+                        map.add(key, smsProperties.getCustomerId());
+                        break;
+                    case "$destinationAddress":
+                        map.add(key, sms.getMobileNumber());
+                        break;
+                    case "$dltTemplateId":
+                        map.add(key, smsProperties.getDltTemplateId());
+                        break;
+                    case "$entityId":
+                        map.add(key, smsProperties.getEntityId());
+                        break;
+                    case "$message":
+                        map.add(key, sms.getMessage());
+                        break;
+                    default:
+                        if (env.containsProperty(value.substring(1))) {
+                            map.add(key, env.getProperty(value.substring(1)));
+                        } else if (smsProperties.getExtraConfigMap().containsKey(value.substring(1))) {
+                            map.add(key, smsProperties.getExtraConfigMap().get(value.substring(1)));
+                        } else if (smsProperties.getCategoryMap().containsKey(value.substring(1))) {
+                            Map<String, Map<String, String>> categoryMap = smsProperties.getCategoryMap();
+                            Map<String, String> categoryValue = categoryMap.get(value.substring(1));
+                            if (sms.getCategory() == null && categoryValue.containsKey('*')) {
+                                map.add(key, categoryValue.get('*'));
+                            } else if (sms.getCategory() != null) {
+                                if (categoryValue.containsKey(sms.getCategory().toString())) {
+                                    map.add(key, categoryValue.get(sms.getCategory().toString()));
+                                } else if (categoryValue.containsKey('*')) {
+                                    map.add(key, categoryValue.get('*'));
+                                }
+                            }
+                        } else {
+                            map.add(key, value);
+                        }
+                        break;
+                }
+            } else {
+                map.add(key, value);
+            }
+
+        }
+
+        return map;
+    }
+    
+//    private Map<String, Object> getSmsRequestBodyJson(Sms sms) {
+//        Map<String, Object> body = new HashMap<>();
+//
+//        String status = sms.getStatus() != null ? sms.getStatus().toUpperCase() : "";
+//
+//        switch (status) {
+//            case "APPROVED":
+//                body.put("customerId", smsProperties.getCustomerIdApproved());
+//                body.put("dltTemplateId", smsProperties.getDltTemplateIdApproved());
+//                body.put("entityId", smsProperties.getEntityIdApproved());
+//                body.put("messageType", smsProperties.getMessageTypeApproved());
+//                break;
+//
+//            case "REJECTED":
+//                body.put("customerId", smsProperties.getCustomerIdRejected());
+//                body.put("dltTemplateId", smsProperties.getDltTemplateIdRejected());
+//                body.put("entityId", smsProperties.getEntityIdRejected());
+//                body.put("messageType", smsProperties.getMessageTypeRejected());
+//                break;
+//
+//            default:
+//                // Default (for new property creation, etc.)
+//                body.put("customerId", smsProperties.getCustomerId());
+//                body.put("dltTemplateId", smsProperties.getDltTemplateId());
+//                body.put("entityId", smsProperties.getEntityId());
+//                body.put("messageType", smsProperties.getMessageType());
+//                break;
+//        }
+//
+//        body.put("destinationAddress", Collections.singletonList(sms.getMobileNumber()));
+//        body.put("message", sms.getMessage());
+//        body.put("sourceAddress", smsProperties.getSenderid());
+//
+//        return body;
+//    }
+    
     
     private Map<String, Object> getSmsRequestBodyJson(Sms sms){
     	Map<String, Object> body = new HashMap<>();
@@ -212,15 +300,33 @@ abstract public class BaseSMSService implements SMSService, SMSBodyBuilder {
 
 		return (ResponseEntity<T>) response;
 	}
+	
+	protected <T> ResponseEntity<T> sendSmsAPICallForApproved(Sms sms) {
+		return null;
+	}
+
+	protected <T> ResponseEntity<T> sendSmsAPICallForRejected(Sms sms) {
+		return null;
+	}
 
     protected HttpEntity<MultiValueMap<String, String>> getRequest(Sms sms) {
-        final MultiValueMap<String, String> requestBody = getSmsRequestBody(sms);
-        return new HttpEntity<>(requestBody, getHttpHeaders());
+//        final MultiValueMap<String, String> requestBody = getSmsRequestBody(sms);
+//        return new HttpEntity<>(requestBody, getHttpHeaders());
+    	final MultiValueMap<String, String> requestBody = getSmsRequestBodyNew(sms);
+        return new HttpEntity<>(requestBody, getHttpHeadersNew());
     }
 
     protected HttpHeaders getHttpHeaders() {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.valueOf(smsProperties.getContentType()));
+        return headers;
+    }
+    
+    protected HttpHeaders getHttpHeadersNew() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.valueOf(smsProperties.getContentType()));
+        headers.set("Authorization","Basic "+Base64.getEncoder().encodeToString(
+				(smsProperties.getUsername() + ":" + smsProperties.getPassword()).getBytes(StandardCharsets.UTF_8)));
         return headers;
     }
 

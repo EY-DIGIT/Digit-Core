@@ -3,8 +3,7 @@ package org.egov.web.notification.sms.service.impl;
 
 import lombok.extern.slf4j.*;
 import org.egov.web.notification.sms.service.*;
-
-
+import org.egov.web.notification.sms.models.Category;
 import org.egov.web.notification.sms.models.Sms;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
@@ -34,13 +33,13 @@ public class GenericSMSServiceImpl extends BaseSMSService {
 
             String url = smsProperties.getUrl();
 
-            if (smsProperties.requestType.equals("POST")) {
-               // HttpEntity<MultiValueMap<String, String>> request = getRequest(sms);
-              //  executeAPI(URI.create(url), HttpMethod.POST, request, String.class);
+			if (smsProperties.requestType.equals("POST")) {
+//				 HttpEntity<MultiValueMap<String, String>> request = getRequest(sms);
+//				 executeAPI(URI.create(url), HttpMethod.POST, request, String.class);
 
-               sendSmsAPICall(sms);
-               
-            } else {
+				sendSmsAPICall(sms);
+
+			} else {
                 final MultiValueMap<String, String> requestBody = getSmsRequestBody(sms);
 
                 URI final_url = UriComponentsBuilder.fromHttpUrl(url).queryParams(requestBody).build().encode().toUri();
