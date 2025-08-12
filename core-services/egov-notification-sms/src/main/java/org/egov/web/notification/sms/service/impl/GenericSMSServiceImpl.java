@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.*;
+import java.util.Map;
 
 
 @Service
@@ -29,25 +30,28 @@ public class GenericSMSServiceImpl extends BaseSMSService {
 
 
     protected void submitToExternalSmsService(Sms sms) {
-        try {
+		try {
 
-            String url = smsProperties.getUrl();
+			String url = smsProperties.getUrl();
 
 			if (smsProperties.requestType.equals("POST")) {
-//				 HttpEntity<MultiValueMap<String, String>> request = getRequest(sms);
-//				 executeAPI(URI.create(url), HttpMethod.POST, request, String.class);
+//				HttpEntity<MultiValueMap<String, String>> request = getRequest(sms);
+//				executeAPI(URI.create(url), HttpMethod.POST, request, String.class);
 
-				sendSmsAPICall(sms);
+				// Making Request Body Airtel Sms Provider
+				HttpEntity<Map<String, Object>> requestAirtel = getRequestAirtel(sms);
+				// Executing Airtel Sms Provider API
+				executeAPIAirtel(URI.create(url), HttpMethod.POST, requestAirtel, String.class);
 
 			} else {
-                final MultiValueMap<String, String> requestBody = getSmsRequestBody(sms);
+				final MultiValueMap<String, String> requestBody = getSmsRequestBody(sms);
 
-                URI final_url = UriComponentsBuilder.fromHttpUrl(url).queryParams(requestBody).build().encode().toUri();
+				URI final_url = UriComponentsBuilder.fromHttpUrl(url).queryParams(requestBody).build().encode().toUri();
 
-                executeAPI(final_url, HttpMethod.GET, null, String.class);
-            }
+				executeAPI(final_url, HttpMethod.GET, null, String.class);
+			}
 
-        } catch (RestClientException e) {
+		} catch (RestClientException e) {
             log.error("Error occurred while sending SMS to " + sms.getMobileNumber(), e);
             throw e;
         }
