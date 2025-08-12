@@ -114,7 +114,8 @@ public class EasebuzzGateway implements Gateway {
 					 dataValue = rootNode.get("data").asText();
 				}else {
 					String errorMessage = rootNode.has("error_desc") ? rootNode.get("error_desc").asText()+rootNode.get("data").asText(): "Unexpected error from payment gateway.";
-				    throw new RuntimeException("Payment initiation failed. Reason: " + errorMessage);
+				   // throw new RuntimeException("Payment initiation failed Reason: " + errorMessage);
+				    throw new CustomException("Payment initiation failed Reason: " + errorMessage, "");
 				}
 				UriComponents uriComponents = null;
 			if(dataValue != null || dataValue.isBlank()) {
