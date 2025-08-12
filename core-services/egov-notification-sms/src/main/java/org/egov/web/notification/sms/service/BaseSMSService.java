@@ -104,7 +104,7 @@ abstract public class BaseSMSService implements SMSService, SMSBodyBuilder {
         return res;
     }
     
-    protected <T> ResponseEntity<T> executeAPINew(URI uri, HttpMethod method, HttpEntity<?> requestEntity, Class<T> type) {
+    protected <T> ResponseEntity<T> executeAPIAirtel(URI uri, HttpMethod method, HttpEntity<?> requestEntity, Class<T> type) {
         ResponseEntity<T> res = (ResponseEntity<T>) restTemplate.exchange(uri, method, requestEntity, String.class);
         String responseString = res.getBody().toString();
 
@@ -189,7 +189,7 @@ abstract public class BaseSMSService implements SMSService, SMSBodyBuilder {
         return map;
     }
     
-    public Map<String, Object> getSmsRequestBodyNew(Sms sms) {
+    public Map<String, Object> getSmsRequestBodyAirtel(Sms sms) {
     	Map<String, Object> map = new HashMap<>();
         for (String key : smsProperties.getConfigMapAirtel().keySet()) {
             String value = smsProperties.getConfigMapAirtel().get(key);
@@ -247,47 +247,6 @@ abstract public class BaseSMSService implements SMSService, SMSBodyBuilder {
         return map;
     }
     
-    
-    
-    private Map<String, Object> getSmsRequestBodyJson(Sms sms){
-    	Map<String, Object> body = new HashMap<>();
-    	body.put("customerId", smsProperties.getCustomerId());
-    	body.put("destinationAddress", Collections.singletonList(sms.getMobileNumber()));
-    	body.put("dltTemplateId", sms.getTemplateId());
-    	body.put("entityId", smsProperties.getEntityId());
-    	body.put("message", sms.getMessage());
-    	body.put("messageType", smsProperties.getMessageType());
-    	body.put("sourceAddress", smsProperties.getSenderid());
-    	return body;
-    }
-    
-    
-	protected <T> ResponseEntity<T> sendSmsAPICall(Sms sms) {
-		Map<String, Object> body = getSmsRequestBodyJson(sms);
-		HttpHeaders headers = new HttpHeaders();
-		headers.setContentType(MediaType.APPLICATION_JSON);
-		headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
-		headers.set("Authorization", "Basic " + Base64.getEncoder().encodeToString(
-				(smsProperties.getUsername() + ":" + smsProperties.getPassword()).getBytes(StandardCharsets.UTF_8)));
-
-		HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
-
-		ResponseEntity<String> response = restTemplate.postForEntity(smsProperties.getUrl(), request, String.class);
-
-		String responseString = response.getBody().toString();
-		log.info("Sms Sent Response : " + response.toString());
-
-		if (smsProperties.getSmsErrorCodes().size() > 0 && isResponseCodeInKnownErrorCodeList(response)) {
-			throw new RuntimeException(SMS_RESPONSE_NOT_SUCCESSFUL);
-		}
-
-		if (smsProperties.getSmsSuccessCodes().size() > 0 && !isResponseCodeInKnownSuccessCodeList(response)) {
-			throw new RuntimeException(SMS_RESPONSE_NOT_SUCCESSFUL);
-		}
-
-		return (ResponseEntity<T>) response;
-	}
-	
 	protected <T> ResponseEntity<T> sendSmsAPICallForApproved(Sms sms) {
 		return null;
 	}
@@ -301,9 +260,9 @@ abstract public class BaseSMSService implements SMSService, SMSBodyBuilder {
         return new HttpEntity<>(requestBody, getHttpHeaders());
     }
     
-    protected HttpEntity<Map<String, Object>> getRequestNew(Sms sms) {
-   	final Map<String, Object> requestBody = getSmsRequestBodyNew(sms);
-       return new HttpEntity<>(requestBody, getHttpHeadersNew());
+    protected HttpEntity<Map<String, Object>> getRequestAirtel(Sms sms) {
+   	final Map<String, Object> requestBody = getSmsRequestBodyAirtel(sms);
+       return new HttpEntity<>(requestBody, getHttpHeadersAirtel());
    }
 
     protected HttpHeaders getHttpHeaders() {
@@ -312,7 +271,7 @@ abstract public class BaseSMSService implements SMSService, SMSBodyBuilder {
         return headers;
     }
     
-    protected HttpHeaders getHttpHeadersNew() {
+    protected HttpHeaders getHttpHeadersAirtel() {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.valueOf(smsProperties.getContentType()));
         headers.set("Authorization","Basic "+Base64.getEncoder().encodeToString(
