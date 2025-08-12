@@ -103,6 +103,21 @@ abstract public class BaseSMSService implements SMSService, SMSBodyBuilder {
 
         return res;
     }
+    
+    protected <T> ResponseEntity<T> executeAPINew(URI uri, HttpMethod method, HttpEntity<?> requestEntity, Class<T> type) {
+        ResponseEntity<T> res = (ResponseEntity<T>) restTemplate.exchange(uri, method, requestEntity, String.class);
+        String responseString = res.getBody().toString();
+
+        if (smsProperties.getSmsErrorCodes().size() > 0 && isResponseCodeInKnownErrorCodeList(res)) {
+            throw new RuntimeException(SMS_RESPONSE_NOT_SUCCESSFUL);
+        }
+
+        if (smsProperties.getSmsSuccessCodes().size() > 0 && !isResponseCodeInKnownSuccessCodeList(res)) {
+            throw new RuntimeException(SMS_RESPONSE_NOT_SUCCESSFUL);
+        }
+
+        return res;
+    }
 
     protected boolean isResponseValidated(ResponseEntity<?> response) {
         String responseString = response.getBody().toString();
@@ -174,51 +189,57 @@ abstract public class BaseSMSService implements SMSService, SMSBodyBuilder {
         return map;
     }
     
-    public MultiValueMap<String, String> getSmsRequestBodyNew(Sms sms) {
-        MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
-        for (String key : smsProperties.getConfigMap().keySet()) {
-            String value = smsProperties.getConfigMap().get(key);
+    public Map<String, Object> getSmsRequestBodyNew(Sms sms) {
+    	Map<String, Object> map = new HashMap<>();
+        for (String key : smsProperties.getConfigMapAirtel().keySet()) {
+            String value = smsProperties.getConfigMapAirtel().get(key);
             if (value.startsWith("$")) {
                 switch (value) {
                     case "$customerId":
-                        map.add(key, smsProperties.getCustomerId());
+                        map.put(key, smsProperties.getCustomerId());
                         break;
                     case "$destinationAddress":
-                        map.add(key, sms.getMobileNumber());
+                        map.put(key, Collections.singletonList(sms.getMobileNumber()));
                         break;
                     case "$dltTemplateId":
-                        map.add(key, smsProperties.getDltTemplateId());
+                        map.put(key, sms.getTemplateId());
                         break;
                     case "$entityId":
-                        map.add(key, smsProperties.getEntityId());
+                        map.put(key, smsProperties.getEntityId());
                         break;
                     case "$message":
-                        map.add(key, sms.getMessage());
+                        map.put(key, sms.getMessage());
+                        break;
+                    case "$messageType":
+                        map.put(key, smsProperties.getMessageType());
+                        break;
+                    case "$sourceAddress":
+                        map.put(key, smsProperties.getSourceAddress());
                         break;
                     default:
                         if (env.containsProperty(value.substring(1))) {
-                            map.add(key, env.getProperty(value.substring(1)));
+                            map.put(key, env.getProperty(value.substring(1)));
                         } else if (smsProperties.getExtraConfigMap().containsKey(value.substring(1))) {
-                            map.add(key, smsProperties.getExtraConfigMap().get(value.substring(1)));
+                            map.put(key, smsProperties.getExtraConfigMap().get(value.substring(1)));
                         } else if (smsProperties.getCategoryMap().containsKey(value.substring(1))) {
                             Map<String, Map<String, String>> categoryMap = smsProperties.getCategoryMap();
                             Map<String, String> categoryValue = categoryMap.get(value.substring(1));
                             if (sms.getCategory() == null && categoryValue.containsKey('*')) {
-                                map.add(key, categoryValue.get('*'));
+                                map.put(key, categoryValue.get('*'));
                             } else if (sms.getCategory() != null) {
                                 if (categoryValue.containsKey(sms.getCategory().toString())) {
-                                    map.add(key, categoryValue.get(sms.getCategory().toString()));
+                                    map.put(key, categoryValue.get(sms.getCategory().toString()));
                                 } else if (categoryValue.containsKey('*')) {
-                                    map.add(key, categoryValue.get('*'));
+                                    map.put(key, categoryValue.get('*'));
                                 }
                             }
                         } else {
-                            map.add(key, value);
+                            map.put(key, value);
                         }
                         break;
                 }
             } else {
-                map.add(key, value);
+                map.put(key, value);
             }
 
         }
@@ -226,54 +247,20 @@ abstract public class BaseSMSService implements SMSService, SMSBodyBuilder {
         return map;
     }
     
-//    private Map<String, Object> getSmsRequestBodyJson(Sms sms) {
-//        Map<String, Object> body = new HashMap<>();
-//
-//        String status = sms.getStatus() != null ? sms.getStatus().toUpperCase() : "";
-//
-//        switch (status) {
-//            case "APPROVED":
-//                body.put("customerId", smsProperties.getCustomerIdApproved());
-//                body.put("dltTemplateId", smsProperties.getDltTemplateIdApproved());
-//                body.put("entityId", smsProperties.getEntityIdApproved());
-//                body.put("messageType", smsProperties.getMessageTypeApproved());
-//                break;
-//
-//            case "REJECTED":
-//                body.put("customerId", smsProperties.getCustomerIdRejected());
-//                body.put("dltTemplateId", smsProperties.getDltTemplateIdRejected());
-//                body.put("entityId", smsProperties.getEntityIdRejected());
-//                body.put("messageType", smsProperties.getMessageTypeRejected());
-//                break;
-//
-//            default:
-//                // Default (for new property creation, etc.)
-//                body.put("customerId", smsProperties.getCustomerId());
-//                body.put("dltTemplateId", smsProperties.getDltTemplateId());
-//                body.put("entityId", smsProperties.getEntityId());
-//                body.put("messageType", smsProperties.getMessageType());
-//                break;
-//        }
-//
-//        body.put("destinationAddress", Collections.singletonList(sms.getMobileNumber()));
-//        body.put("message", sms.getMessage());
-//        body.put("sourceAddress", smsProperties.getSenderid());
-//
-//        return body;
-//    }
     
     
     private Map<String, Object> getSmsRequestBodyJson(Sms sms){
     	Map<String, Object> body = new HashMap<>();
     	body.put("customerId", smsProperties.getCustomerId());
     	body.put("destinationAddress", Collections.singletonList(sms.getMobileNumber()));
-    	body.put("dltTemplateId", smsProperties.getDltTemplateId());
+    	body.put("dltTemplateId", sms.getTemplateId());
     	body.put("entityId", smsProperties.getEntityId());
     	body.put("message", sms.getMessage());
     	body.put("messageType", smsProperties.getMessageType());
     	body.put("sourceAddress", smsProperties.getSenderid());
     	return body;
     }
+    
     
 	protected <T> ResponseEntity<T> sendSmsAPICall(Sms sms) {
 		Map<String, Object> body = getSmsRequestBodyJson(sms);
@@ -310,11 +297,14 @@ abstract public class BaseSMSService implements SMSService, SMSBodyBuilder {
 	}
 
     protected HttpEntity<MultiValueMap<String, String>> getRequest(Sms sms) {
-//        final MultiValueMap<String, String> requestBody = getSmsRequestBody(sms);
-//        return new HttpEntity<>(requestBody, getHttpHeaders());
-    	final MultiValueMap<String, String> requestBody = getSmsRequestBodyNew(sms);
-        return new HttpEntity<>(requestBody, getHttpHeadersNew());
+       final MultiValueMap<String, String> requestBody = getSmsRequestBody(sms);
+        return new HttpEntity<>(requestBody, getHttpHeaders());
     }
+    
+    protected HttpEntity<Map<String, Object>> getRequestNew(Sms sms) {
+   	final Map<String, Object> requestBody = getSmsRequestBodyNew(sms);
+       return new HttpEntity<>(requestBody, getHttpHeadersNew());
+   }
 
     protected HttpHeaders getHttpHeaders() {
         HttpHeaders headers = new HttpHeaders();

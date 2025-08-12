@@ -31,12 +31,15 @@ public class SMSRequest {
     private String tenantId;
     private String email;
     private String[] users;
+    
+    //Message Template Details
+    private String templateId;
 
     public Sms toDomain() {
         if (category == null) {
-            return new Sms(mobileNumber, message, Category.OTHERS, expiryTime);
+            return new Sms(mobileNumber, message, Category.OTHERS, expiryTime,templateId);
         } else {
-            return new Sms(mobileNumber, message, category, expiryTime);
+            return new Sms(mobileNumber, message, category, expiryTime,templateId);
         }
     }
 }

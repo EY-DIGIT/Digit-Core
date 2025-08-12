@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.*;
+import java.util.Map;
 
 
 @Service
@@ -36,8 +37,10 @@ public class GenericSMSServiceImpl extends BaseSMSService {
 			if (smsProperties.requestType.equals("POST")) {
 //				 HttpEntity<MultiValueMap<String, String>> request = getRequest(sms);
 //				 executeAPI(URI.create(url), HttpMethod.POST, request, String.class);
+				 HttpEntity<Map<String, Object>> request = getRequestNew(sms);
+				 executeAPINew(URI.create(url), HttpMethod.POST, request, String.class);
 
-				sendSmsAPICall(sms);
+//				 sendSmsAPICall(sms);
 
 			} else {
                 final MultiValueMap<String, String> requestBody = getSmsRequestBody(sms);

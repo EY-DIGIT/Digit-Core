@@ -69,6 +69,9 @@ public class SMSProperties {
     @Value("${sms.whitelist.numbers}")
     private List<String> whitelistNumbers;
     
+    @Value("${sms.source.address}")
+    private String sourceAddress;
+    
     // property Creation
     @Value("${sms.provider.entityId}")
     private String entityId;
@@ -79,34 +82,8 @@ public class SMSProperties {
     @Value("${sms.provider.messageType}")
     private String messageType;
     
-    @Value("${sms.provider.dltTemplateId}")
-    private String dltTemplateId;
-    
-    // Propert Rejected
-    @Value("${sms.provider.entityId.property.reject}")
-    private String entityIdRejected;
-    
-    @Value("${sms.provider.customerId.property.reject}")
-    private String customerIdRejected;
-    
-    @Value("${sms.provider.messageType.property.reject}")
-    private String messageTypeRejected;
-    
-    @Value("${sms.provider.dltTemplateId.property.reject}")
-    private String dltTemplateIdRejected;
-    
-    // Property Approved
-    @Value("${sms.provider.entityId.property.approved}")
-    private String entityIdApproved;
-    
-    @Value("${sms.provider.customerId.property.approved}")
-    private String customerIdApproved;
-    
-    @Value("${sms.provider.messageType.property.approved}")
-    private String messageTypeApproved;
-    
-    @Value("${sms.provider.dltTemplateId.property.approved}")
-    private String dltTemplateIdApproved;
+    @Value("#{${sms.config.map.airtel}}")
+    Map<String, String> configMapAirtel;
 
 
     @Setter(AccessLevel.PROTECTED) private List<Pattern> whitelistPatterns;
