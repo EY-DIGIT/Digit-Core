@@ -1,7 +1,7 @@
 package org.egov.user.web.controller;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.time.DateFormatUtils;
+//import org.apache.commons.lang.time.DateFormatUtils;
 import org.egov.common.contract.response.ResponseInfo;
 import org.egov.user.domain.model.*;
 
@@ -214,5 +214,39 @@ public class UserController {
         }
         return true;
     }
+    /**
+     * end-point to validate an access token and retrieve user details if valid.
+     * 
+     * This API checks whether the provided access token is valid. If valid, it returns the
+     * user details associated with the token. If the token is invalid will give Invalid Token message.
+     * 
+     *
+     * @param accessToken the access token to be validated
+     * @return CustomUserDetails object if the token is valid, or an error response if not
+     */
+
+    @PostMapping("/_validateToken")
+    public ResponseEntity<?> validateToken(@RequestParam("access_token") String accessToken) {
+        try {
+            final UserDetail userDetail = tokenService.getUser(accessToken);
+
+            if (userDetail == null) {
+                Map<String, Object> errorBody = new HashMap<>();
+                errorBody.put("valid", false);
+                errorBody.put("message", "The access token is invalid, expired, or has been revoked.");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorBody);
+            }
+
+            return ResponseEntity.ok(new CustomUserDetails(userDetail));
+
+        } catch (Exception e) {
+            Map<String, Object> errorBody = new HashMap<>();
+            errorBody.put("valid", false);
+            errorBody.put("message", "Token validation failed.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorBody);
+        }
+    }
+
+
 
 }
