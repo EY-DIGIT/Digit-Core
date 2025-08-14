@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.egov.pg.models.Transaction;
 import org.egov.pg.service.Gateway;
 import org.egov.pg.utils.Utils;
+import org.egov.pg.web.models.User;
 import org.egov.tracer.model.CustomException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
@@ -28,6 +29,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -68,15 +70,21 @@ public class EasebuzzGateway implements Gateway {
     @SuppressWarnings("null")
 	@Override
     public URI generateRedirectURI(Transaction transaction) {
+    	String errorMessage = null;
         try {
            
             // Optional: Generate hash using merchant_key + txnid + amount + productinfo + firstname + email + salt
             // Note: Actual implementation would use secure hash method (e.g., SHA512) as per Easebuzz documentation
+			String email = (transaction.getUser() != null && transaction.getUser().getEmailId() != null
+					&& !transaction.getUser().getEmailId().trim().isEmpty()) ? transaction.getUser().getEmailId()
+							: "abc@gmail.com";
+
             String hashString = MERCHANT_KEY + "|" + transaction.getTxnId() + "|" + Utils.formatAmtAsRupee(transaction.getTxnAmount())
-                    + "|"+transaction.getProductInfo()+"|" + transaction.getUser().getName() + "|" + transaction.getUser().getEmailId() + "|||||||||||" + SALT;
+                    + "|"+transaction.getProductInfo()+"|" + transaction.getUser().getName() + "|" + email + "|||||||||||" + SALT;
             //System.out.println(hashString);
             String hash = Utils.generateSha512Hash(hashString);
             String returnUrl = transaction.getCallbackUrl();
+            
             log.info("returnUrl::::"+getReturnUrl(returnUrl, REDIRECT_URL));
            
             String requestBody = "key="+MERCHANT_KEY
@@ -84,7 +92,7 @@ public class EasebuzzGateway implements Gateway {
                     + "&amount="+Utils.formatAmtAsRupee(transaction.getTxnAmount())
                     + "&productinfo="+transaction.getProductInfo()
                     + "&firstname="+transaction.getUser().getName()
-                    + "&email="+transaction.getUser().getEmailId()
+                    + "&email="+email
                     + "&phone="+transaction.getUser().getMobileNumber()
                     + "&surl="+getReturnUrl(returnUrl, REDIRECT_URL)
                     + "&furl="+getReturnUrl(returnUrl,REDIRECT_URL)
@@ -113,25 +121,30 @@ public class EasebuzzGateway implements Gateway {
 				if (rootNode.get("status").asInt() == 1) {
 					 dataValue = rootNode.get("data").asText();
 				}else {
-					String errorMessage = rootNode.has("error_desc") ? rootNode.get("error_desc").asText()+rootNode.get("data").asText(): "Unexpected error from payment gateway.";
-				   // throw new RuntimeException("Payment initiation failed Reason: " + errorMessage);
-				    throw new CustomException("Payment initiation failed Reason: " + errorMessage, "");
+					 errorMessage = rootNode.has("error_desc") ? rootNode.get("error_desc").asText()+" "+ rootNode.get("data").asText(): "Unexpected error from payment gateway.";
+				    throw new RuntimeException("Payment initiation failed Reason: " + errorMessage);
 				}
 				UriComponents uriComponents = null;
-			if(dataValue != null || dataValue.isBlank()) {
-             uriComponents = UriComponentsBuilder
+				if(dataValue != null || dataValue.isBlank()) {
+					uriComponents = UriComponentsBuilder
                     .fromHttpUrl(MERCHANT_URL_PAY+dataValue)
                     .build()
                     .encode();
 			}else {
 				log.error("Error occurred while Received response "+MERCHANT_URL_DEBIT);
+				errorMessage = "Error occurred while Received response "+MERCHANT_URL_DEBIT;
 				throw new IllegalArgumentException("data cannot be null or empty");
 			}
             return uriComponents.toUri();
 			
         } catch (Exception e) {
+        	if(errorMessage == null) {
             log.error("Easebuzz hash generation failed", e);
             throw new CustomException("HASH_GEN_FAILED", "Hash generation failed, gateway redirect URI cannot be generated");
+        	}else {
+        	log.error(errorMessage, e);
+            throw new CustomException(errorMessage, "Hash generation failed, gateway redirect URI cannot be generated");
+        	}
         }
     }
     
