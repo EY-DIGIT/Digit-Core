@@ -11,4 +11,6 @@ public class SMSRequest {
     private String message;
     private Category category;
     private long expiryTime;
+    
+    private String templateId;
 }

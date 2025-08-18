@@ -1,6 +1,8 @@
 package org.egov.persistence.repository;
 
 import lombok.extern.slf4j.Slf4j;
+
+import org.apache.commons.lang3.StringUtils;
 import org.egov.common.utils.MultiStateInstanceUtil;
 import org.egov.domain.model.Category;
 import org.egov.domain.model.OtpRequest;
@@ -24,6 +26,16 @@ public class OtpSMSRepository {
     private static final String LOCALIZATION_KEY_REGISTER_SMS = "sms.register.otp.msg";
     private static final String LOCALIZATION_KEY_LOGIN_SMS = "sms.login.otp.msg";
     private static final String LOCALIZATION_KEY_PWD_RESET_SMS = "sms.pwd.reset.otp.msg";
+	
+	 private static final String LOCALIZATION_KEY_REGISTER_OTP_SMS = "PT_NOTIF_REGISTER_OTP_SEND";
+	 private static final String LOCALIZATION_KEY_LOGIN_OTP_SMS = "PT_NOTIF_LOGIN_OTP_SEND";
+	 private static final String LOCALIZATION_KEY_PWD_RESET_OTP_SMS = "PT_NOTIF_PWD_RESET_OTP_SEND";
+	 
+	 private static final String LOCALIZATION_KEY_MODULE_NAME = "rainmaker-pt";
+	 private static final String LOCALIZATION_KEY_LOCALE = "en_IN";
+	 
+	 private static final String TMPLT_ID_REGISTER_OTP_SMS = "PT_SMS_TMPLT_ID_OTP_SEND_REGISTER";
+	 private static final String TMPLT_ID_LOGIN_OTP_SMS = "PT_SMS_TMPLT_ID_OTP_SEND_LOGIN";
 
     @Value("${expiry.time.for.otp: 4000}")
     private long maxExecutionTime=2000L;
@@ -52,11 +64,38 @@ public class OtpSMSRepository {
 		Long currentTime = System.currentTimeMillis() + maxExecutionTime;
 		final String message = getMessage(otpNumber, otpRequest);
         String updatedTopic = centralInstanceUtil.getStateSpecificTopicName(otpRequest.getTenantId(), smsTopic);
-        kafkaTemplate.send(updatedTopic, new SMSRequest(otpRequest.getMobileNumber(), message, Category.OTP, currentTime));
+        kafkaTemplate.send(updatedTopic, new SMSRequest(otpRequest.getMobileNumber(), message, Category.OTP, currentTime,"TemplateId Test"));
     }
+    
+    public void sendIMC(OtpRequest otpRequest, String otpNumber) {
+    	
+    	  String tenantId = getRequiredTenantId(otpRequest.getTenantId());
+          String locale = LOCALIZATION_KEY_LOCALE;
+          if (!StringUtils.isEmpty(otpRequest.getRequestInfo().getMsgId()) && otpRequest.getRequestInfo().getMsgId().split("\\|").length >= 2) {
+  			locale = otpRequest.getRequestInfo().getMsgId().split("\\|")[1];
+  		}
+          
+       Map<String, String> localisedMsgs = localizationService.getLocalisedMessages(tenantId, locale , LOCALIZATION_KEY_MODULE_NAME);
+      String templateId =null;
+       if (otpRequest.isRegistrationRequestType())
+    	   templateId = localisedMsgs.get(TMPLT_ID_REGISTER_OTP_SMS);
+       else if (otpRequest.isLoginRequestType())
+    	   templateId = localisedMsgs.get(TMPLT_ID_LOGIN_OTP_SMS);
+
+ 		Long currentTime = System.currentTimeMillis() + maxExecutionTime;
+ 		final String message = getMessageIMC(otpNumber, otpRequest,localisedMsgs);
+         String updatedTopic = centralInstanceUtil.getStateSpecificTopicName(otpRequest.getTenantId(), smsTopic);
+         kafkaTemplate.send(updatedTopic, new SMSRequest(otpRequest.getMobileNumber(), message, Category.OTP, currentTime,templateId));
+     }
 
     private String getMessage(String otpNumber, OtpRequest otpRequest) {
         final String messageFormat = getMessageFormat(otpRequest);
+        return format(messageFormat, otpNumber);
+    }
+    
+    private String getMessageIMC(String otpNumber, OtpRequest otpRequest,Map<String, String> localisedMsgs) {
+    	 
+        final String messageFormat = getMessageFormatIMC(otpRequest,localisedMsgs);
         return format(messageFormat, otpNumber);
     }
 
@@ -77,6 +116,27 @@ public class OtpSMSRepository {
             message = localisedMsgs.get(LOCALIZATION_KEY_LOGIN_SMS);
         else
             message = localisedMsgs.get(LOCALIZATION_KEY_PWD_RESET_SMS);
+
+        return message;
+    }
+    
+    
+    private String getMessageFormatIMC(OtpRequest otpRequest, Map<String, String> localisedMsgs ) {
+     
+        if (localisedMsgs.isEmpty()) {
+            log.info("Localization Service didn't return any msgs so using default...");
+            localisedMsgs.put(LOCALIZATION_KEY_REGISTER_OTP_SMS, "Dear Citizen, Your OTP to complete your mSeva Registration is %s.");
+            localisedMsgs.put(LOCALIZATION_KEY_LOGIN_OTP_SMS, "Dear Citizen, Your Login OTP is %s.");
+            localisedMsgs.put(LOCALIZATION_KEY_PWD_RESET_OTP_SMS, "Dear Citizen, Your OTP for recovering password is %s.");
+        }
+        String message = null;
+
+        if (otpRequest.isRegistrationRequestType())
+            message = localisedMsgs.get(LOCALIZATION_KEY_REGISTER_OTP_SMS);
+        else if (otpRequest.isLoginRequestType())
+            message = localisedMsgs.get(LOCALIZATION_KEY_LOGIN_OTP_SMS);
+        else
+            message = localisedMsgs.get(LOCALIZATION_KEY_PWD_RESET_OTP_SMS);
 
         return message;
     }
