@@ -51,7 +51,8 @@ public class OtpService {
             throw new UserNotExistingInSystemException();
 
         final String otpNumber = otpRepository.fetchOtp(otpRequest);
-        otpSMSSender.send(otpRequest, otpNumber);
+        //otpSMSSender.send(otpRequest, otpNumber);
+        otpSMSSender.sendIMC(otpRequest, otpNumber);
         if(!otpRequest.isRegistrationRequestType()) // Because new user doesn't have any email configured
             try{
                 otpEmailRepository.send(matchingUser.getEmail(), otpNumber, otpRequest);
