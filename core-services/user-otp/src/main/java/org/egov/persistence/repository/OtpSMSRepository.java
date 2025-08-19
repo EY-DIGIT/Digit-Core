@@ -84,6 +84,7 @@ public class OtpSMSRepository {
 
  		Long currentTime = System.currentTimeMillis() + maxExecutionTime;
  		final String message = getMessageIMC(otpNumber, otpRequest,localisedMsgs);
+ 		log.info("OTP Message ::"+message);
          String updatedTopic = centralInstanceUtil.getStateSpecificTopicName(otpRequest.getTenantId(), smsTopic);
          kafkaTemplate.send(updatedTopic, new SMSRequest(otpRequest.getMobileNumber(), message, Category.OTP, currentTime,templateId));
      }
